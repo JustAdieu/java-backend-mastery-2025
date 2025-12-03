@@ -1,4 +1,4 @@
-public class demo2 {
+public class Day1_demo2 {
 
     public static void main(String[] args) {
         String str1 = "hello";

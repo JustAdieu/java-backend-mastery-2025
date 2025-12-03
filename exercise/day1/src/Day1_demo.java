@@ -1,5 +1,5 @@
 
-public class demo {
+public class Day1_demo {
     public static void main(String[] args) {
         int num1 = 10;
         System.out.println(num1);//10
