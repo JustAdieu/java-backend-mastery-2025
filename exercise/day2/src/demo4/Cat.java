@@ -1,0 +1,38 @@
+package demo4;
+
+public class Cat extends Animal{
+    private String food;
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == this)return true;
+        if(obj == null)return false;
+        if(obj.getClass() != this.getClass())return false;
+        Cat c = (Cat)obj;
+        return super.equals(obj)&& this.food.equals(c.food);
+    }
+
+    public Cat(String name, int age, String food) {
+        super(name, age);
+        this.food = food;
+    }
+
+    public Cat(String food) {
+        this.food = food;
+    }
+
+    public Cat() {
+    }
+
+    public Cat(String name, int age) {
+        super(name, age);
+    }
+
+    public String getFood() {
+        return food;
+    }
+
+    public void setFood(String food) {
+        this.food = food;
+    }
+}
