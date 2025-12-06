@@ -1,15 +1,23 @@
 package demo4;
 
+import java.util.Objects;
+
 public class Cat extends Animal{
     private String food;
 
     @Override
     public boolean equals(Object obj) {
         if(obj == this)return true;
+        if(!super.equals(obj))return false;
         if(obj == null)return false;
         if(obj.getClass() != this.getClass())return false;
         Cat c = (Cat)obj;
-        return super.equals(obj)&& this.food.equals(c.food);
+        return this.food.equals(c.food);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode() + this.getFood());
     }
 
     public Cat(String name, int age, String food) {

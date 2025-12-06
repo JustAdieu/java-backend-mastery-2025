@@ -1,5 +1,7 @@
 package demo4;
 
+import java.util.Objects;
+
 public class Circle extends Shape{
     private double radius;
 
@@ -21,6 +23,11 @@ public class Circle extends Shape{
         if(!(obj instanceof Circle))return true;
         Circle circle = (Circle) obj;
         return this.radius == circle.radius;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), radius);
     }
 
     public double getRadius() {

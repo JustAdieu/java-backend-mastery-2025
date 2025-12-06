@@ -1,5 +1,7 @@
 package demo4;
 
+import java.util.Objects;
+
 public class Dog extends Animal{
     private String action;
 
@@ -22,9 +24,15 @@ public class Dog extends Animal{
     @Override
     public boolean equals(Object obj) {
         if(obj == this)return true;
+        if(!super.equals(obj))return false;
         if(obj.getClass() != this.getClass())return false;
         Dog dog = (Dog) obj;
-        return super.equals(obj) && this.action.equals(dog.action);
+        return this.action.equals(dog.action);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode() + this.getAction());
     }
 
     public String getAction() {

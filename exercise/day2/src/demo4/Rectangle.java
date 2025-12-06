@@ -1,5 +1,7 @@
 package demo4;
 
+import java.util.Objects;
+
 public class Rectangle extends Shape{
     private double width;
     private double height;
@@ -21,6 +23,11 @@ public class Rectangle extends Shape{
         if(!(obj instanceof Rectangle))return true;
         Rectangle rectangle = (Rectangle) obj;
         return this.width == rectangle.width && this.height == rectangle.height;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode()+this.getHeight()+this.getWidth());
     }
 
     public double getWidth() {

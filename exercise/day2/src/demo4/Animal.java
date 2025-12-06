@@ -1,8 +1,19 @@
 package demo4;
 
+import demo1.Address;
+
+import java.util.Objects;
+
 public class Animal {
     private String name;
     private int age;
+    private Address address;
+
+    public Animal(String name, int age, Address address) {
+        this.name = name;
+        this.age = age;
+        this.address = address;
+    }
 
     public Animal(String name, int age) {
         this.name = name;
@@ -19,7 +30,12 @@ public class Animal {
         if (getClass() != obj.getClass()) return false;
 //      if(!(obj instanceof Animal))return false;
         Animal other = (Animal) obj;
-        return age == other.age && name.equals(other.name);
+        return age == other.age && name.equals(other.name) && address.equals(other.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, age,address);
     }
 
     public String getName() {

@@ -156,3 +156,210 @@ public abstract class Person {
 使用抽象类的时候需要注意几点：一是抽象类不必要全是抽象方法，二是抽象类的子类如果不是抽象类的话就必须实现继承自父类的抽象方法，三是抽象类不可以有具体的实现对象。
 
 ### equals方法
+
+针对这一部分，我认为无法脱离业务逻辑来解释怎么写equals方法，学习这里的时候真正让我头痛的是equals使用场景的复杂性。我没办法直接列举出来所有情况，所以我们先通过这几个例子来看看，这是比较具有代表性的几个场景。
+
+场景一：业务逻辑需要你判断两个对象所有的关键成员相等才算是相等。现在我们有Animal,Dog,Cat三个类，其中Animal是Dog和Cat的父类，他们三个私有成员分别如下：
+```java
+public class Animal {
+    private String name;
+    private int age;
+}
+
+public class Cat extends Animal{
+    private String food;
+}
+
+public class Dog extends Animal{
+    private String action;
+}
+```
+
+那么我们的业务逻辑可以这样写
+```java
+/**
+*Animal
+*/
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        Animal other = (Animal) obj;
+        return age == other.age && name.equals(other.name);
+    }
+/**
+*Dog
+*/
+@Override
+public boolean equals(Object obj) {
+    if(obj == this)return true;
+    if(!super.equals(obj))return false;
+    if(obj.getClass() != this.getClass())return false;
+    Dog dog = (Dog) obj;
+    return this.action.equals(dog.action);
+}
+/**
+*Cat
+*/
+@Override
+public boolean equals(Object obj) {
+    if(obj == this)return true;
+    if(!super.equals(obj))return false;
+    if(obj == null)return false;
+    if(obj.getClass() != this.getClass())return false;
+    Cat c = (Cat)obj;
+    return this.food.equals(c.food);
+}
+```
+
+最后在main中运行如下：
+
+```java
+Dog dog1 = new Dog("Tom",18,"running");
+Cat cat1 = new Cat("Tom",18,"maoliang");
+Animal animal1 = new Dog("Tom",18,"running");
+Animal animal2 = new Cat("Tom",18,"maoliang");
+Animal animal3 = new Animal("Tom",18);
+System.out.println(dog1.equals(cat1));//false
+System.out.println(animal2.equals(animal1));//false,因为动态绑定的原因，调用的是Cat中的equals方法
+System.out.println(animal3.equals(animal1));//false,因为这里animal中的equals方法是比对className,如果是instanceof的话就是true
+```
+
+场景二：现在你有三个类，分别是Shape，Rectangle，Circle，其中Shape是Rectangle和Circle的父类，他们的私有成员分别如下：
+
+```java
+public class Shape {
+    private double area;
+}
+
+public class Circle extends Shape{
+    private double radius;
+}
+
+public class Rectangle extends Shape{
+    private double width;
+    private double height;
+}
+```
+
+我们的业务需求是比较两个对象的面积是否相等，如果相等就判定这两个对象相等。其中为了严谨性，如果两个同为Circle的话，要求不仅面积相等也要radius相等，请注意，对于我们实际问题中，两个圆面积相等半径一定相等，但是这是计算机中，由于double精度限制，会出现例如c1的半径是2.0，c2的半径是2.00000000001，他们的面积相等但是半径并不相等。
+
+我们编写他们各自的equals方法如下：
+```java
+@Override//shape
+public boolean equals(Object obj) {
+    if(this == obj)return true;
+    if(obj == null)return false;
+    if(!(obj instanceof Shape))return false;
+    Shape shape = (Shape) obj;
+    return this.area == shape.area;
+}
+@Override//circle
+public boolean equals(Object obj) {
+    if(!super.equals(obj))return false;
+    if(!(obj instanceof Circle))return true;
+    Circle circle = (Circle) obj;
+    return this.radius == circle.radius;
+}
+@Override//rectangle
+public boolean equals(Object obj) {
+    if(!super.equals(obj))return false;
+    if(!(obj instanceof Rectangle))return true;
+    Rectangle rectangle = (Rectangle) obj;
+    return this.width == rectangle.width && this.height == rectangle.height;
+}
+```
+
+运行结果如下:
+
+```java
+Circle circle1 = new Circle(4,2.0000000);
+Circle circle2 = new Circle(4,2.0000001);
+Rectangle rectangle1 = new Rectangle(4,4,2);
+System.out.println(circle1.equals(circle2));//false
+System.out.println(circle1.equals(rectangle1));//true
+```
+
+ok，那么接下来我们来讲讲为什么要这样写，首先，如果两个引用的是同一个对象的话，那么他们无疑是equals的，所以我们在一开始的euqals方法中都有`if(obj == this)return true`这一条指令，节约了我们后续比较的开销。随后我们进行了`if(obj == null)return false`这一步，这十分具有必要性。可以预防后面比较时候出现空指针异常。这时候如果我们的业务要求是必须得要同类才可以算是相等的话就必须使用getClass否则使用instanceof来判断。具体参照上面的代码中的细节。最后进行强制类型转换，由于我们前面判断过了是否可以强制类型转换所以不必担心异常。最后再根据业务逻辑来判断个体域即可。
+
+### hashCode()
+
+首先，我自认为如果要了解到hashCode，必然不能脱离HashMap相关的知识点，这个疑惑点来自于我们重写hashCode方法时候除了可以使用到Objects类中的hash方法来生成散列码，也可以通过手动编写来生成散列码。此时无论是深入到Objects中的hash方法，发现它是调用Arrays中的hashCode方法来实现，而Arrays中的hashCode方法除了借助于JVM生成的hash码之外，核心部分则是使用了乘以31的迭代散列码；还是从手动写hashCode方法中发现也要用到的31这个神奇的数字，我们不妨会对散列码的生成产生好奇，为什么是31。这跟时候我们可以深入到哈希表来了解以下全貌。但是在此之前我对于JVM中的怎么生成hash码十分好奇，所以先来唠唠这方面的相关知识。
+
+#### JVM是怎么生成hash码的？
+
+首先由于我对于线程相关的知识不是特别得了解，所以我只能简单得概括一下。先来回到Java中我们可见的Arrays中的hashCode方法
+
+```java
+public static int hashCode(Object a[]) {
+    if (a == null)
+        return 0;
+    int result = 1;
+    for (Object element : a)
+        result = 31 * result + (element == null ? 0 : element.hashCode());
+    return result;
+}
+```
+
+没毛病，它是调用Object中的hashCode方法（这里要注意，由于动态绑定的特性，并不一定就是Objcet中的hashCode方法，如果说element本身是继承Object中的String这些封装类的话，会优先调用String中的hashCode方法，只有element没有重写hashCode方法时候才会调用Object中的的hashCode方法，才会深入到JVM）。来看看Object这里面的方法：
+
+```java
+@IntrinsicCandidate
+public native int hashCode();
+```
+
+这里是我们能再java中接触的最后一个方法，`native`关键字表明它是调用了JVM中的方法，而`@IntrinsicCandidate`是告诉HotSpot虚拟机可以被优化替换为更高效的内部优化。Ok，这里已经来到了JVM中的方法了，那么我们需要知道的是JVM其实是用C++来编写的，但是没什么问题，我们只需要理解原理的就好了。JVM生成散列码的调用方法是使用get_next_hash方法，这个方法包含了5种生成散列码的方法，使用switch-case来进行条件判断，我们调用的是其中的xorShift算法来生成，这个方法是基于当前线程的XorShift状态来生成对应的散列码，而这个散列码会随调用一次就更新一次，在此之前会将新生成的散列码和调用的对象进行绑定且不可再变。==了解这方面的知识我们可以学习到的是，JVM将生成的散列码与调用对象进行解耦，而是和线程相关。这不仅仅意味着散列码是和对象属性无关的，对象属性变化不会影响hashCode，同时也起到了将对象隐私隔离，避免了信息外泄。同时XorShift生成是借助于异或和位移，对CPU极其友好，这是性能优化上常常出现的特点，同时散列码是线程私有的，多线程处理下，每个线程独立迭代，不需要加线程锁，并发效率高。同时状态码总位数高达320位，迭代周期高达2^320-1，几乎不可能出现哈希冲突==
+
+下面是几个很有意思的例子，我们一起来看看：
+
+例子1：
+
+```java
+Animal animal1 = new Animal("Tom",18);
+String str1 = "Tom";
+String str2 = animal1.getName();
+System.out.println(str1.hashCode());
+System.out.println(Objects.hash(str2));//不一致，原因在于上面的是直接调用String中的hashCode，而下面的是调用了Object中的hashCode，由于Object是String父类，由于动态绑定调用了String中的hashCode方法。核心区别如下
+```
+
+Arrays中的hashCode方法：
+
+![image-20251206150554857](C:\Users\Adieu\AppData\Roaming\Typora\typora-user-images\image-20251206150554857.png)
+
+他比String多了一个result迭代的过程
+
+例子2：
+
+```java
+Animal animal1 = new Animal("Tom",18,new Address("maoliang"));//重写了Address中的hashCode方法
+Animal animal2 = new Animal("Tom",18,new Address("maoliang"));
+int hashcode1 = animal1.hashCode();
+int hashcode2 = animal2.hashCode();
+System.out.println(hashcode1);
+System.out.println(hashcode2);//两个结果相等
+```
+
+例子3：
+
+```java
+Animal animal1 = new Animal("Tom",18,new Address("maoliang"));//没重写了Address中的hashCode方法
+Animal animal2 = new Animal("Tom",18,new Address("maoliang"));
+int hashcode1 = animal1.hashCode();
+int hashcode2 = animal2.hashCode();
+System.out.println(hashcode1);
+System.out.println(hashcode2);//两个结果不等
+```
+
+上面两个都是由于动态绑定的特性，例子2通过重写了Address中的equals方法达到了element.hashCode动态绑定的是Address中的方法，而例子3没有重写调用的就是Object.hashCode方法，底层是基于JVM实现的。所以两个对象的散列码并不相同。
+
+#### 哈希表内部运行机制
+
+前面我们已经学过了hash值是怎么生成的，那我在介绍哈希表时候就先概述一下哈希表的存储和查找过程。
+针对存储而言，我们先抛开扩容机制，哈希表在拿到了对象后，根据对象的hash值来进行初始处理，确保高位可以用到以及减少低位重复导致的碰撞。预处理后的值再和当前的桶数量-1进行相与得到的值就是存储的桶的下标。然后再将对象和其预处理过后的hash值等等封装得到的Node尾插法插入到链表或者红黑树中。
+针对查找而言，同样是找到对应的桶，然后遍历通过比对预处理后的哈希值相等后调用对象的equals方法进行比对得到真正的想要的对象。注意这里允许哈希值相同，因为先比对的哈希值是为了节约调用equals的开销。我们最终确定的对象是要调用equals方法来确定的。这里就回到前面的，我们一定要确保我们重写的equals方法符合我们的业务需求，hash值也必须得要对应equals方法，否则我们根本无法得到正确的对象。
+
+那么哈希表还有两个机制是必要的，第一个是树化，第二个是扩容机制。首先树化的前提要求是数组元素已经扩容到64个以上，并且链表节点已经到达了8个，所以我们先讲扩容机制。
+扩容机制的发生和两个因素有关，第一个是当前容量，第二个是负载因子。当前容量是指已有的数组大小，负载因子通常是0.75。阈值等于两者相乘，当添加的新元素导致已有数组的数量大于阈值的时候，会触发扩容，容量扩容至原来的两倍，阈值也随之变化。
+这个时候将所有的节点取出来，然后根据预处理后的哈希值和新的容量进行与操作（注意不是容量-1），如果为零就放入原来的索引，不是的话就加到原来索引加原来容量值处。
+树化的话是达到上述的两个条件所触发的机制，仅针对当前的链表，最终将链表转换为自平衡的二叉搜索树也就是红黑树。
