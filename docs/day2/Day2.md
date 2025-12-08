@@ -363,3 +363,69 @@ System.out.println(hashcode2);//两个结果不等
 扩容机制的发生和两个因素有关，第一个是当前容量，第二个是负载因子。当前容量是指已有的数组大小，负载因子通常是0.75。阈值等于两者相乘，当添加的新元素导致已有数组的数量大于阈值的时候，会触发扩容，容量扩容至原来的两倍，阈值也随之变化。
 这个时候将所有的节点取出来，然后根据预处理后的哈希值和新的容量进行与操作（注意不是容量-1），如果为零就放入原来的索引，不是的话就加到原来索引加原来容量值处。
 树化的话是达到上述的两个条件所触发的机制，仅针对当前的链表，最终将链表转换为自平衡的二叉搜索树也就是红黑树。
+
+### toString()方法
+
+Object类中定义的toString()方法返回一个字符串包含了对象所属的类名和散列码。如下：
+
+```java
+public static void main(String[] args){
+    Person p = new Person("Tom", 18, "nan");
+    System.out.println(p);//demo5.Person@119d7047
+}
+```
+
+如果我们要重写toString方法的话，通常是这种格式：
+
+```java
+@Override
+public String toString() {
+    return "Person{" +
+            "name='" + name + '\'' +
+            ", age=" + age +
+            ", sex='" + sex + '\'' +
+            '}';
+}
+```
+
+为了方便我们后续代码的调试，我们最好给每一个类都添加一个toString方法。
+
+### 枚举类
+
+枚举类顾名思义，本身就是一个类。所有的枚举类型都是Enum类的子类。那么接下来我们的学习重点可以选择从Enum类出发。
+
+首先，Enum类中有final修饰的name()方法，返回的是当前枚举对象的name，类中同样提供了toString方法，但是这个方法可以被重写，意味着我们可以客制化这个方法，所以我们通常在业务中也更加推荐使用这个方法。
+
+```java
+Season s = Season.SPRING;
+//未重写枚举类中的toString()方法
+System.out.println(s.name());//SPRING
+System.out.println(s.toString());//SPRING
+//重写枚举类中的toString()方法
+System.out.println(s.name());//SPRING
+System.out.println(s.toString());//当前枚举值是；SPRING
+```
+
+Enum类中还提供了ordinal方法返回的是当前枚举对象对应的值的序号
+
+```java
+Season s = Season.SPRING;
+System.out.println(s.ordinal());//0
+```
+
+通过刨析Enum类的源码我们不妨发现其中的一些的门道，例如在其中equals方法返回的是this == other的值，也就是说我们可以不需要使用equals方法直接使用==就可以进行比对了。值得注意的是，这个方法同样是使用final进行修饰的，这意味着并不提供重写的方法。类似不提供重写的还有hashCode方法，准确来说的话从Object类中继承的方法应该是仅有toString方法可以重写。
+
+Enum类中提供了toString方法的逆方法valueOf()，这个方法通过接受枚举类的类名，以及其中枚举常量的名称返回一个枚举类的实例。
+
+```java
+Season s = Enum.valueOf(Season.class,"SPRING");
+System.out.println(s.toString());//SPRING
+```
+
+每一个枚举类型都有一个静态的枚举类型，但是这个方法并非继承自Enum， 而是Java 编译器在编译时自动生成 的 “合成方法”。
+
+```java
+System.out.println(Arrays.toString(Season.values()));//[SPRING, SUMMER, AUTUMN, WINTER]
+System.out.println(Season.values());//[Ldemo6.Season;@119d7047
+```
+
