@@ -429,3 +429,256 @@ System.out.println(Arrays.toString(Season.values()));//[SPRING, SUMMER, AUTUMN, 
 System.out.println(Season.values());//[Ldemo6.Season;@119d7047
 ```
 
+### 反射
+
+从这一节开始要重新深入学习反射知识了，算是另类的一种朝花夕拾吧。差不多一年前，初看Java核心卷一的时候就是反射让我望而却步。现如今，重看这一节却感觉充满了期待，这也算是另类的一种进步吧。
+
+#### Class类
+
+本来想通过源码来刨析这个类的所有成员以及方法，但是一看源码4000+行就知道有点痴人说梦了，所以还是学习其中几个较为常用的方法以及引入Class这个类开始学习吧。
+
+其实如果直接跟着Java核心卷一那里的直接学这一节，我认为是十分不妥的，缺乏了一种联系前后的过渡。很明显的一点就是直接介绍Class类是什么，这会让读者陷入了一种很懵逼的撕裂感：我在学什么。而这种撕裂感往往就是阻止一年前我继续学习这一章的最大阻力。所以我先介绍一下这一节的重要性以及前瞻性。
+Class类是反射机制的核心，它可以帮组描述运行时候类的一系列数据（包括但不局限于类名，属性，方法，构造器，继承关系等等）。这样说可能还是不能很好理解到反射的厉害点，换一种表达就是在一门面向对象的程序设计语言中，反射做到了为开发者提供反封装技术，将不可视的变为可视。后续我们也会学习到反射甚至可以某种程度上进行hack数据，尽管这种技术十分暴露以及非常容易被制止，但是不妨碍我们体会这个技术的伟大性。
+
+回到Class类，它可以为每个加载的类创建且仅创建一个Class实例，这意味着无论一个类的对象有多么不同，他们得到的Class实例都是一定相同的。我们可以验证一下:
+
+```java
+User u = new User();
+User u2 = new User("张三", 18);
+Class c = u.getClass();
+Class c2 = u2.getClass();
+System.out.println(c.getName());//demo7.User
+System.out.println(c2.getName());//demo7.User
+System.out.println(c==c2);//true
+```
+
+同时Class不仅局限于普通的类，接口，枚举类，注解，基本类型，void等等都有对应的Class实例:
+
+```java
+System.out.println(void.class);//void
+System.out.println(int.class);//void
+System.out.println(User.class);//class demo7.User
+```
+
+值得引起关注的是这里的class是一个关键字。
+
+接下来会介绍几个常用的获取Class对象的方法：
+
+1. 类名.class（编译期确定，最安全）
+2. 对象.getClass()（运行时获取，需实例）
+3. Class.forName("全类名")（动态加载，需处理 `ClassNotFoundException`）
+
+[^注释]:  我自认为要理解这三个方法，应该还是要理解一下编译期和运行期以及动态加载的含义。所以接下来会简单介绍一下：
+[^编译期]: 首先需要明确的是Java的两个关键阶段：编译和运行，编译是指将.java源码编译为.class字节码的过程，编译期就是编译器负责的，此时编译器会进行语法检查，类型检验之类的工作，这个过程会直接报错，而.class就是在编译期时候进行的，所以这种情况无需担心是否会出现异常
+[^运行期]: 在编译完成后，加载编译后的 `.class` 字节码文件、执行字节码指令、创建对象、调用方法、处理内存分配 / 回收的整个过程。
+
+[^动态加载]: 动态加载发生在运行期，直接描述有点不太好描述，我直接用getClass方法和forName方法作区别来理解更好理解点。getClass的实现依赖于哪个对象来调用，也就是说，虽然编译期并没有明确Class实例是哪个，但至少我们已经通过了对象来调用就一定存在最后的实例，但是forName不一样，我们无法确保最后是否能得到实例，所以需要处理异常。前者是利用已经加载的类，后者是主动来加载未加载的类。
+
+```java
+Class c1 = User.class;//第一种获取方法
+Class c2 = new User().getClass();//第二种获取方法
+Class c3 = null;
+try {
+    c3 = Class.forName("demo7.User");//第三种获取方法
+} catch (ClassNotFoundException e) {
+    throw new RuntimeException(e);
+}
+System.out.println(c1);//class demo7.User
+System.out.println(c2);//class demo7.User
+System.out.println(c3);//class demo7.User
+```
+
+最后, 再通过一个例子来结束，我们可以通过一个newInstance方法来创建一个类的实例，例如：
+
+```java
+Class c1 = User.class;
+try {
+    User u1 = (User)c1.getConstructor().newInstance();
+    System.out.println(u1);
+} catch (InstantiationException e) {
+    throw new RuntimeException(e);
+} catch (IllegalAccessException e) {
+    throw new RuntimeException(e);
+} catch (InvocationTargetException e) {
+    throw new RuntimeException(e);
+} catch (NoSuchMethodException e) {
+    throw new RuntimeException(e);
+}
+```
+
+#### 利用反射分析类的能力
+
+本节内容主要通过一个具体的例子来出发串连一下前面的知识以及介绍一下本节的知识点。
+
+首先我们通过前面的学习已经能够很好理解到类的封装性，而反射则提供了一个打开这个类的方法。在java.lang.reflect包中有三个类Field,Constructor和Method，分别用于描述类的域，构造器和方法。
+
+我们先看一个情景题，当你需要编写一段代码来展示某个特定类的所有信息，包括了这个类的属性，域，构造器和方法，还要显示所有的属性，包括私有的。首先由于这个类是不确定并且不是给你一个对象而是给出全类名。这个时候我们需要通过动态加载的方法来取得这个类的Class实例故使用forName方法，同时还需要处理异常。
+```java
+String name;
+Scanner in = new Scanner(System.in);
+System.out.println("Enter class name(java.util.Date):");
+name = in.next();
+```
+
+接下来，我们需要按照一个特定的方法来展示这个类的内部所有信息以及这个类的信息，取得修饰符的方法叫做getModifiers：
+
+```java
+Class c = Class.forName(name);
+String modifiers = Modifier.toString(c.getModifiers());
+```
+
+其中getModifiers方法是Class类中的，而Modifier类中提供了静态方法toString来分析getModifiers返回的int数所代表的含义，然后只需要将对应的值打印出来即可。
+
+这时候我们再通过Class类中的getName方法取得当前类的全类名并打印，其次，我们需要确定是否当前的类有继承自除了Object的其他类，选择性打印:
+
+```java
+Class superC = c.getSuperclass();
+if(superC!=null && superC!=Object.class){
+    System.out.print("extends "+superC.getName());
+}
+```
+
+接下来是取得这个类中的构造器，为了方便代码的模块化表达，我们使用一个自定义方法printConstructors将这个功能封装一下，随后是取得这个类中所有的构造器，这个时候我们需要使用到Class中的getDeclaredConstructors方法来取得Constructor类的集合，然后遍历依次使用类似上面的方法打印属性以及当前的构造器名称，这里还需要我们使用getParameterTypes方法取得入参集合方便后续打印:
+
+```java
+private static void printConstructors(Class c){
+    Constructor[] constructors = c.getDeclaredConstructors();
+    for (Constructor ctor : constructors) {
+        String modifiers = Modifier.toString(ctor.getModifiers());
+        System.out.print("    ");
+        if(modifiers.length()>0)System.out.print(modifiers+" ");
+        System.out.print(ctor.getName()+"(");
+        Class[] paramTypes = ctor.getParameterTypes();
+        for(int i = 0;i < paramTypes.length;i++){
+            if(i>0)System.out.print(",");
+            System.out.print(paramTypes[i].getName());
+        }
+        System.out.println(");");
+    }
+}
+```
+
+接下来类似的过程:
+
+```java
+private static void printFields(Class c){
+    Field[] fields = c.getDeclaredFields();
+    for(Field f : fields){
+        String modifiers = Modifier.toString(f.getModifiers());
+        System.out.print("    ");
+        if(modifiers.length()>0)System.out.print(modifiers+" ");
+        System.out.print(f.getType().getName()+" ");
+        System.out.println(f.getName()+";");
+    }
+}
+```
+
+```java
+ private static void printMethods(Class c){
+     Method[] methods = c.getDeclaredMethods();
+     for (Method m : methods) {
+         String modifiers = Modifier.toString(m.getModifiers());
+         System.out.print("    ");
+         if(modifiers.length()>0)System.out.print(modifiers+" ");
+         String returnType = m.getReturnType().getName();
+         System.out.print(returnType+" ");
+         System.out.print(m.getName()+"(");
+         Class[] paramTypes = m.getParameterTypes();
+         for(int i = 0;i < paramTypes.length;i++){
+             if(i>0)System.out.print(",");
+             System.out.print(paramTypes[i].getName());
+         }
+         System.out.println(");");
+     }
+ }
+```
+
+最终的代码如下：
+
+```java
+public class Main {
+    public static void main(String[] args){
+        /**
+         * function：反射获取类的信息
+         * author：adieu
+         * date：2025/12/9
+         */
+        String name;
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter class name(java.util.Date):");
+        name = in.next();
+
+        System.out.println(Modifier.toString(int.class.getModifiers()));
+
+        try {
+            Class c = Class.forName(name);
+            Class superC = c.getSuperclass();
+            String modifiers = Modifier.toString(c.getModifiers());
+            if(modifiers.length()>0)System.out.print(modifiers+" ");
+            System.out.print("class "+c.getName()+" ");
+            if(superC!=null && superC!=Object.class){
+                System.out.print("extends "+superC.getName());
+            }
+            System.out.println();
+            System.out.println("{");
+            printConstructors(c);
+            System.out.println();
+            printMethods(c);
+            System.out.println();
+            printFields(c);
+            System.out.println("}");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void printFields(Class c){
+        Field[] fields = c.getDeclaredFields();
+        for(Field f : fields){
+            String modifiers = Modifier.toString(f.getModifiers());
+            System.out.print("    ");
+            if(modifiers.length()>0)System.out.print(modifiers+" ");
+            System.out.print(f.getType().getName()+" ");
+            System.out.println(f.getName()+";");
+        }
+    }
+
+    private static void printMethods(Class c){
+        Method[] methods = c.getDeclaredMethods();
+        for (Method m : methods) {
+            String modifiers = Modifier.toString(m.getModifiers());
+            System.out.print("    ");
+            if(modifiers.length()>0)System.out.print(modifiers+" ");
+            String returnType = m.getReturnType().getName();
+            System.out.print(returnType+" ");
+            System.out.print(m.getName()+"(");
+            Class[] paramTypes = m.getParameterTypes();
+            for(int i = 0;i < paramTypes.length;i++){
+                if(i>0)System.out.print(",");
+                System.out.print(paramTypes[i].getName());
+            }
+            System.out.println(");");
+        }
+    }
+
+    private static void printConstructors(Class c){
+        Constructor[] constructors = c.getDeclaredConstructors();
+        for (Constructor ctor : constructors) {
+            String modifiers = Modifier.toString(ctor.getModifiers());
+            System.out.print("    ");
+            if(modifiers.length()>0)System.out.print(modifiers+" ");
+            System.out.print(ctor.getName()+"(");
+
+            Class[] paramTypes = ctor.getParameterTypes();
+            for(int i = 0;i < paramTypes.length;i++){
+                if(i>0)System.out.print(",");
+                System.out.print(paramTypes[i].getName());
+            }
+            System.out.println(");");
+        }
+
+    }
+
+}
+```
+

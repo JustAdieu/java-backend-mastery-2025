@@ -20,7 +20,7 @@ public class Main {
 //        System.out.println(s.toString());//当前枚举值是；SPRING
 //        Season s = Enum.valueOf(Season.class,"SPRING");
 //        System.out.println(s.toString());
-        System.out.println(Arrays.toString(Season.values()));//[SPRING, SUMMER, AUTUMN, WINTER]
-        System.out.println(Season.values());//[Ldemo6.Season;@119d7047
+//        System.out.println(Arrays.toString(Season.values()));//[SPRING, SUMMER, AUTUMN, WINTER]
+//        System.out.println(Season.values());//[Ldemo6.Season;@119d7047
     }
 }
