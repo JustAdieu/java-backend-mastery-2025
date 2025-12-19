@@ -144,3 +144,10 @@ public E get(int index) {
 2. 调用 `fastRemove()` 执行上述移动逻辑；
 
 - 时间复杂度 O (n)（遍历 + 移动元素）。
+
+## 关键注意事项
+
+1. **非线程安全**：ArrayList 未加同步锁，多线程并发修改（如一边 add 一边遍历）会抛出 `ConcurrentModificationException`；需用 `Collections.synchronizedList()` 或 `CopyOnWriteArrayList` 替代。
+2. **迭代器快速失败**：遍历过程中若修改集合（除迭代器自身的 remove 方法），迭代器会检测到 `modCount` 变化并抛异常。
+3. **空值允许**：ArrayList 支持存储 null 元素（可通过 `add(null)` 添加）。
+4. **序列化优化**：`elementData` 被 `transient` 修饰，因为数组可能有空闲空间（`size < length`），序列化时通过 `writeObject()` 只写入实际元素，减少空间占用。
