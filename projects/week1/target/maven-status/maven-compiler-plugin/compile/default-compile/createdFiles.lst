@@ -1,0 +1,6 @@
+com\adieu\ApplicationStarter.class
+com\adieu\pojo\Person.class
+com\adieu\pojo\Teacher.class
+com\adieu\pojo\Admin.class
+com\adieu\pojo\Student.class
+com\adieu\attendance\AttendanceAble.class
