@@ -13,12 +13,18 @@
         <option value="$PROJECT_DIR$/exercise/day4/MavenDemo2/pom.xml" />
         <option value="$PROJECT_DIR$/exercise/day4/ecommerce-parent/pom.xml" />
         <option value="$PROJECT_DIR$/projects/week1/pom.xml" />
+        <option value="$PROJECT_DIR$/day4-ecommerce/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/day4-ecommerce/pom.xml" />
         <option value="$PROJECT_DIR$/exercise/day4/MavenDemo/pom.xml" />
         <option value="$PROJECT_DIR$/exercise/day4/MavenDemo2/pom.xml" />
+        <option value="$PROJECT_DIR$/exercise/day4/MavenJUnitDemo/pom.xml" />
+        <option value="$PROJECT_DIR$/exercise/day4/ecommerce-parent/ecommerce-common/pom.xml" />
+        <option value="$PROJECT_DIR$/exercise/day4/ecommerce-parent/ecommerce-service/pom.xml" />
+        <option value="$PROJECT_DIR$/exercise/day4/ecommerce-parent/pom.xml" />
       </set>
     </option>
   </component>

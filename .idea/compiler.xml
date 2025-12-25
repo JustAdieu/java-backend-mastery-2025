@@ -6,15 +6,27 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="MavenJUnitDemo" />
         <module name="week1" />
+        <module name="day4-ecommerce" />
+      </profile>
+      <profile name="Annotation profile for ecommerce-parent" enabled="true">
+        <sourceOutputDir name="../../../exercise/day4/ecommerce-parent/ecommerce-common/target/generated-sources/annotations" />
+        <sourceTestOutputDir name="../../../exercise/day4/ecommerce-parent/ecommerce-common/target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
         <module name="ecommerce-common" />
+      </profile>
+      <profile name="Annotation profile for ecommerce-service" enabled="true">
+        <sourceOutputDir name="../../../exercise/day4/ecommerce-parent/ecommerce-service/target/generated-sources/annotations" />
+        <sourceTestOutputDir name="../../../exercise/day4/ecommerce-parent/ecommerce-service/target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
         <module name="ecommerce-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="17">
+      <module name="day4-ecommerce" target="17" />
       <module name="MavenDemo" target="17" />
       <module name="MavenDemo2" target="17" />
+      <module name="MavenJUnitDemo" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>
